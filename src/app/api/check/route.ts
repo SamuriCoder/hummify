@@ -1,0 +1,48 @@
+import { NextResponse } from 'next/server';
+
+// This is a placeholder implementation
+// In a real app, you'd want to store the current song in a session or state management
+let currentSong: { title: string; artist: string } | null = null;
+
+export async function POST(request: Request) {
+  try {
+    const { guess, title, artist } = await request.json();
+    
+    if (!title || !artist) {
+      return NextResponse.json(
+        { error: 'No song data provided' },
+        { status: 400 }
+      );
+    }
+    // Improved matching: order-insensitive, ignore punctuation, all words must be present
+    function normalize(str) {
+      return str
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '') // remove punctuation
+        .split(/\s+/)
+        .filter(Boolean);
+    }
+
+    const guessWords = normalize(guess);
+    const titleWords = normalize(title);
+    const artistWords = normalize(artist);
+
+    // Check if all title words and all artist words are present in the guess
+    const titleMatch = titleWords.every(word => guessWords.includes(word));
+    const artistMatch = artistWords.every(word => guessWords.includes(word));
+
+    const isCorrect = titleMatch && artistMatch;
+    
+    return NextResponse.json({
+      correct: isCorrect,
+      actualTitle: title,
+      actualArtist: artist,
+    });
+  } catch (error) {
+    console.error('Error checking guess:', error);
+    return NextResponse.json(
+      { error: 'Failed to check guess' },
+      { status: 500 }
+    );
+  }
+} 
