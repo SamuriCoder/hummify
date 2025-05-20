@@ -1,6 +1,6 @@
-# Songless Clone
+# Hummify
 
-A music guessing game inspired by [Songless](https://lessgames.com/songless), built with Next.js and the Deezer API.
+A music guessing game inspired by the concept of [Songless](https://lessgames.com/songless), built with Next.js and the Deezer API.
 
 ## Features
 
