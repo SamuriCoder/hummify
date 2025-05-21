@@ -6,10 +6,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#1DB954', // Spotify green
-        secondary: '#191414', // Spotify black
+        primary: '#8B5CF6', // Vibrant purple
+        secondary: '#1E1B2E', // Dark purple-black
         background: '#121212',
-        surface: '#282828',
+        surface: '#2D2A3F', // Slightly purple-tinted dark surface
       },
     },
   },

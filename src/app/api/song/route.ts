@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 
-const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
-
 // Enhanced cache system
 interface CacheEntry {
   artists: string[];
@@ -10,97 +8,110 @@ interface CacheEntry {
 }
 
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const TRACK_CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours
+const RECENTLY_PLAYED_SIZE = 10;
+
 const cache: CacheEntry = {
   artists: [],
   timestamp: 0,
   tracks: new Map()
 };
 
+// Track recently played songs to prevent immediate repeats
+const recentlyPlayed: { artist: string; title: string }[] = [];
+
+// Curated list of popular artists
+const POPULAR_ARTISTS = [
+  // Hip Hop/Rap
+  'Drake', 'Kendrick Lamar', 'J. Cole', 'Travis Scott', 'Post Malone',
+  'Eminem', 'Kanye West', 'Jay-Z', 'Lil Wayne', 'Future',
+  '21 Savage', 'Lil Baby', 'Migos', 'Cardi B', 'Nicki Minaj',
+  'Juice WRLD', 'Lil Uzi Vert', 'A$AP Rocky', 'Tyler, The Creator',
+  'Childish Gambino', 'The Weeknd', 'Khalid', 'Billie Eilish', 'Ariana Grande',
+  // Pop
+  'Taylor Swift', 'Ed Sheeran', 'Justin Bieber', 'Dua Lipa', 'Harry Styles',
+  'Lady Gaga', 'Rihanna', 'Beyoncé', 'Bruno Mars', 'Adele', 'Frank Ocean', 'SZA',
+  // Alternative/Indie
+  'Arctic Monkeys', 'Tame Impala', 'Glass Animals',
+  // Rock
+  'Coldplay', 'Imagine Dragons', 'Panic! At The Disco', 'Calvin Harris', 'The Chainsmokers',
+];
+
 function shuffleArray(array: any[]) {
-  for (let i = array.length - 1; i > 0; i--) {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
   }
-  return array;
+  return newArray;
+}
+
+function isRecentlyPlayed(artist: string, title: string): boolean {
+  return recentlyPlayed.some(song => 
+    song.artist.toLowerCase() === artist.toLowerCase() && 
+    song.title.toLowerCase() === title.toLowerCase()
+  );
+}
+
+function addToRecentlyPlayed(artist: string, title: string) {
+  recentlyPlayed.unshift({ artist, title });
+  if (recentlyPlayed.length > RECENTLY_PLAYED_SIZE) {
+    recentlyPlayed.pop();
+  }
 }
 
 async function getPopularArtists() {
   if (cache.artists.length > 0 && Date.now() - cache.timestamp < CACHE_DURATION) {
-    // Always return a shuffled copy of the cached artists
     return shuffleArray([...cache.artists]);
   }
 
-  try {
-    const response = await fetch(
-      `https://ws.audioscrobbler.com/2.0/?method=chart.gettopartists&api_key=${LASTFM_API_KEY}&format=json&limit=50`
-    );
-    const data = await response.json();
-    
-    if (data.artists?.artist) {
-      cache.artists = data.artists.artist.map((artist: any) => artist.name);
-      cache.timestamp = Date.now();
-      return shuffleArray([...cache.artists]);
-    }
-  } catch (error) {
-    console.error('Error fetching popular artists:', error);
-  }
-
-  // Fallback to our curated list if Last.fm API fails
-  return [
-    'Drake', 'Kendrick Lamar', 'J. Cole', 'Travis Scott', 'Post Malone',
-    'Eminem', 'Kanye West', 'Jay-Z', 'Lil Wayne', 'Future',
-    '21 Savage', 'Lil Baby', 'Migos', 'Cardi B', 'Nicki Minaj',
-    'Juice WRLD', 'Lil Uzi Vert', 'A$AP Rocky', 'Tyler, The Creator',
-    'Childish Gambino', 'The Weeknd', 'Khalid', 'Billie Eilish', 'Ariana Grande',
-  ];
+  // Always return a fresh shuffle of the popular artists
+  cache.artists = shuffleArray([...POPULAR_ARTISTS]);
+  cache.timestamp = Date.now();
+  return cache.artists;
 }
 
 async function getArtistTopTracks(artist: string) {
   // Check cache first
   const cachedTracks = cache.tracks.get(artist);
   if (cachedTracks && cachedTracks.length > 0) {
-    return cachedTracks[Math.floor(Math.random() * cachedTracks.length)];
+    // Filter out recently played tracks
+    const availableTracks = cachedTracks.filter(track => 
+      !isRecentlyPlayed(artist, track.title)
+    );
+    
+    if (availableTracks.length > 0) {
+      const selectedTrack = availableTracks[Math.floor(Math.random() * availableTracks.length)];
+      addToRecentlyPlayed(artist, selectedTrack.title);
+      return selectedTrack;
+    }
   }
 
   try {
-    // Parallel requests for Last.fm and Deezer
-    const [lastFmResponse, deezerResponse] = await Promise.all([
-      fetch(`https://ws.audioscrobbler.com/2.0/?method=artist.gettoptracks&artist=${encodeURIComponent(artist)}&api_key=${LASTFM_API_KEY}&format=json&limit=10`),
-      fetch(`https://api.deezer.com/search?q=artist:"${encodeURIComponent(artist)}"&limit=10&order=RATING_DESC`)
-    ]);
-
-    const [lastFmData, deezerData] = await Promise.all([
-      lastFmResponse.json(),
-      deezerResponse.json()
-    ]);
-
-    let validTracks: any[] = [];
-
-    // Process Last.fm tracks
-    if (lastFmData.toptracks?.track) {
-      const lastFmTracks = lastFmData.toptracks.track;
-      // Parallel search for each Last.fm track on Deezer
-      const deezerSearches = lastFmTracks.map(async (track: any) => {
-        const searchResponse = await fetch(
-          `https://api.deezer.com/search?q=track:"${encodeURIComponent(track.name)}" artist:"${encodeURIComponent(artist)}"&limit=1`
-        );
-        const searchData = await searchResponse.json();
-        return searchData.data?.[0];
-      });
-
-      const deezerResults = await Promise.all(deezerSearches);
-      validTracks = deezerResults.filter(track => track?.preview);
+    // Clear track cache if it's too old
+    if (Date.now() - cache.timestamp > TRACK_CACHE_DURATION) {
+      cache.tracks.clear();
     }
 
-    // If no valid tracks from Last.fm, use direct Deezer results
-    if (validTracks.length === 0 && deezerData.data) {
-      validTracks = deezerData.data.filter((s: any) => s.preview);
-    }
+    // Use Deezer API to get tracks
+    const deezerResponse = await fetch(
+      `https://api.deezer.com/search?q=artist:"${encodeURIComponent(artist)}"&limit=20&order=RATING_DESC`
+    );
+    const deezerData = await deezerResponse.json();
 
-    // Update cache
-    if (validTracks.length > 0) {
-      cache.tracks.set(artist, validTracks);
-      return validTracks[Math.floor(Math.random() * validTracks.length)];
+    if (deezerData.data) {
+      const validTracks = deezerData.data.filter((track: any) => 
+        track.preview && 
+        track.artist.name.toLowerCase() === artist.toLowerCase()
+      );
+
+      // Update cache
+      if (validTracks.length > 0) {
+        cache.tracks.set(artist, validTracks);
+        const selectedTrack = validTracks[Math.floor(Math.random() * validTracks.length)];
+        addToRecentlyPlayed(artist, selectedTrack.title);
+        return selectedTrack;
+      }
     }
   } catch (error) {
     console.error('Error fetching artist top tracks:', error);
@@ -113,9 +124,14 @@ export async function GET() {
   try {
     const popularArtists = await getPopularArtists();
     
-    // Try multiple artists in parallel
-    const artistBatch = popularArtists.slice(0, 5); // Try first 5 artists
-    const trackPromises = artistBatch.map(artist => getArtistTopTracks(artist));
+    // Try multiple artists in parallel with a timeout
+    const artistBatch = popularArtists.slice(0, 8); // Try 8 artists in parallel
+    const trackPromises = artistBatch.map(artist => 
+      Promise.race([
+        getArtistTopTracks(artist),
+        new Promise(resolve => setTimeout(() => resolve(null), 3000)) // 3 second timeout
+      ])
+    );
     
     const results = await Promise.all(trackPromises);
     const validSong = results.find(song => song !== null);
