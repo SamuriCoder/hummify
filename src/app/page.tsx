@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Howl } from 'howler';
-import confetti from 'canvas-confetti';
 
 const INTERVALS = [0.1, 1, 2, 4, 8, 15];
 const MAX_GUESSES = 6;
@@ -30,15 +29,15 @@ export default function Home() {
 
     try {
       // Fetch multiple songs in parallel
-      const songPromises = Array(BATCH_SIZE).fill(null).map(() =>
-        fetch(`/api/song?timestamp=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()) // Added timestamp
+      const songPromises = Array(BATCH_SIZE).fill(null).map(() => 
+        fetch('/api/song').then(res => res.json())
       );
 
       const results = await Promise.allSettled(songPromises);
-
+      
       // Find the first successful song with a valid preview URL
-      const validSong = results.find(result =>
-        result.status === 'fulfilled' &&
+      const validSong = results.find(result => 
+        result.status === 'fulfilled' && 
         result.value.previewUrl
       );
 
@@ -80,7 +79,7 @@ export default function Home() {
       });
     } catch (error) {
       console.error('Error starting game:', error);
-      if (attempt >= 5) { // Consider adjusting this threshold based on typical network conditions
+      if (attempt >= 5) {
         alert('Failed to start game after several attempts. Please try again.');
       } else {
         startGame(attempt + 1);
@@ -92,7 +91,7 @@ export default function Home() {
     sound.stop();
     sound.seek(0);
     sound.play();
-
+    
     // Stop after the current interval
     setTimeout(() => {
       sound.stop();
@@ -109,12 +108,12 @@ export default function Home() {
     // Mark current guess as incorrect if not already correct or incorrect
     setGuesses(prev => {
       const updated = [...prev];
-      if (!updated[currentInterval]) updated[currentInterval] = ''; // Keep the guess if there was one
+      if (!updated[currentInterval]) updated[currentInterval] = '';
       return updated;
     });
     setStatuses(prev => {
       const updated = [...prev];
-      if (updated[currentInterval] !== 'correct') updated[currentInterval] = 'incorrect'; // Only mark incorrect if not already correct
+      if (!updated[currentInterval]) updated[currentInterval] = 'incorrect';
       return updated;
     });
     setCurrentInterval(prev => prev + 1);
@@ -180,12 +179,6 @@ export default function Home() {
           actualArtist: data.actualArtist,
         });
         setShowModal(true);
-        // Optional: Trigger confetti on correct guess
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
       } else if (currentInterval === MAX_GUESSES - 1) {
         setLastResult({
           correct: false,
@@ -194,12 +187,11 @@ export default function Home() {
         });
         setShowModal(true);
       } else {
-        setGuess(''); // Clear guess only on incorrect and more guesses remaining
+        setGuess('');
         setTimeout(() => playNextInterval(), 200); // slight delay for feedback
       }
     } catch (error) {
       console.error('Error checking guess:', error);
-      // Potentially show an error message to the user here
     }
   };
 
@@ -216,15 +208,12 @@ export default function Home() {
     setStatuses(Array(MAX_GUESSES).fill(''));
     setShowModal(false);
     setLastResult(null);
-    // Automatically start the next game/round
-    startGame();
   };
 
   // Fetch live song suggestions from iTunes API with debounce and deduplication
   useEffect(() => {
     if (!guess) {
       setSuggestions([]);
-      setShowSuggestions(false); // Hide suggestions when guess is empty
       return;
     }
     const controller = new AbortController();
@@ -245,16 +234,11 @@ export default function Home() {
             if (uniqueSuggestions.length >= 5) break;
           }
           setSuggestions(uniqueSuggestions);
-          setShowSuggestions(uniqueSuggestions.length > 0); // Show suggestions only if there are any
         } else {
           setSuggestions([]);
-          setShowSuggestions(false);
         }
       } catch (e) {
-        if (e instanceof Error && e.name !== 'AbortError') {
-          setSuggestions([]);
-          setShowSuggestions(false);
-        }
+        if (e instanceof Error && e.name !== 'AbortError') setSuggestions([]);
       }
     }, 200); // 200ms debounce
     return () => {
@@ -269,7 +253,7 @@ export default function Home() {
         <h1 className="text-5xl font-extrabold text-center mb-6 tracking-tight text-white drop-shadow-lg">
           <span className="text-primary">Humm</span>ify
         </h1>
-        <div className="card mb-8 shadow-2xl rounded-2xl bg-surface/90 border border-gray-800 p-6"> {/* Added padding to card */}
+        <div className="card mb-8 shadow-2xl rounded-2xl bg-surface/90 border border-gray-800">
           {/* Improved Round/Score UI */}
           <div className="flex items-center justify-between mb-6 px-4 py-2 rounded-lg bg-background/70 border border-gray-700">
             <span className="text-lg font-medium text-gray-300">
@@ -280,7 +264,7 @@ export default function Home() {
               Score: <span className="font-bold text-white">{score}</span>
             </span>
           </div>
-          {isPlaying && songData && ( // Ensure songData is available before showing interval
+          {isPlaying && (
             <div className="text-center mb-2">
               <p className="text-lg font-semibold text-primary mt-2">
                 Interval: {INTERVALS[currentInterval]}s
@@ -298,16 +282,16 @@ export default function Home() {
                     : 'border-gray-700 bg-background/80'
                 }`}
               >
-                <span className={`w-16 text-sm font-bold ${idx === currentInterval && isPlaying ? 'text-primary' : 'text-gray-400'}`}>Stage {idx + 1}</span> {/* Added isPlaying condition for current stage highlight */}
+                <span className={`w-16 text-sm font-bold ${idx === currentInterval ? 'text-primary' : 'text-gray-400'}`}>Stage {idx + 1}</span>
                 <span className="w-20 text-xs text-gray-400 ml-2">{INTERVALS[idx]}s</span>
-                <span className={`flex-1 ml-4 text-base truncate ${statuses[idx] === 'correct' ? 'text-green-400' : statuses[idx] === 'incorrect' ? 'text-red-400' : 'text-gray-200'}`}>{guesses[idx] || (idx === currentInterval && isPlaying ? 'Listening...' : '')}</span> {/* Show 'Listening...' for current active stage */}
+                <span className={`flex-1 ml-4 text-base ${statuses[idx] === 'correct' ? 'text-green-400' : statuses[idx] === 'incorrect' ? 'text-red-400' : 'text-gray-200'}`}>{guesses[idx]}</span>
                 {statuses[idx] === 'correct' && <span className="ml-2 text-green-400 font-bold">✔</span>}
                 {statuses[idx] === 'incorrect' && <span className="ml-2 text-red-400 font-bold">✖</span>}
               </div>
             ))}
           </div>
           {/* Input and Controls */}
-          {!isPlaying || !songData ? ( // Show Start New Round if not playing or songData is null
+          {!isPlaying ? (
             <button
               onClick={() => startGame()}
               className="btn-primary w-full py-3 text-lg rounded-xl shadow-md hover:scale-[1.02] transition-transform"
@@ -318,7 +302,7 @@ export default function Home() {
             <div className="space-y-4">
               <form onSubmit={handleGuess} className="space-y-4">
                 <div ref={inputContainerRef} className="relative flex items-center">
-                  <span className="absolute left-3 text-gray-500 pointer-events-none"> {/* Made icon non-interactive */}
+                  <span className="absolute left-3 text-gray-500">
                     <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" d="M11 19a8 8 0 100-16 8 8 0 000 16zm7-1l-4.35-4.35" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </span>
                   <input
@@ -329,21 +313,22 @@ export default function Home() {
                       setGuess(e.target.value);
                       setShowSuggestions(true);
                     }}
-                    onFocus={() => setShowSuggestions(true && guess.length > 0)} // Show suggestions on focus only if there's text
+                    onFocus={() => setShowSuggestions(true)}
                     placeholder="Know it? Search for the title"
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-background border border-gray-700 text-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all outline-none"
-                    disabled={currentInterval >= MAX_GUESSES || !!statuses[currentInterval]} // Disable if current stage is already answered
+                    disabled={currentInterval >= MAX_GUESSES || statuses[currentInterval] === 'correct'}
                   />
                   {showSuggestions && suggestions.length > 0 && (
                     <div className="absolute left-0 right-0 top-full mt-2 z-20 bg-surface rounded-md shadow-lg border border-gray-700 overflow-y-auto max-h-60 w-full">
                       {suggestions.map((suggestion, index) => (
                         <button
                           key={index}
-                          type="button" // Important for forms to prevent submission
+                          type="button"
                           onClick={() => {
                             handleSuggestionClick(suggestion);
+                            if (inputRef.current) inputRef.current.focus();
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-700 focus:bg-gray-700 focus:outline-none text-base text-white" // Ensured text is white
+                          className="w-full text-left px-4 py-2 hover:bg-gray-700 focus:bg-gray-700 focus:outline-none text-base"
                         >
                           {suggestion}
                         </button>
@@ -352,21 +337,21 @@ export default function Home() {
                   )}
                 </div>
                 <div className="flex space-x-2">
-                  <button type="submit" className="btn-primary flex-1 py-3 text-lg rounded-xl shadow hover:scale-[1.02] transition-transform" disabled={!guess || !!statuses[currentInterval]}> {/* Disable if no guess or current stage is answered */}
+                  <button type="submit" className="btn-primary flex-1 py-3 text-lg rounded-xl shadow hover:scale-[1.02] transition-transform" disabled={statuses[currentInterval] === 'correct'}>
                     Submit
                   </button>
                   <button
                     type="button"
                     onClick={replayCurrentInterval}
-                    className="btn-secondary flex-1 py-3 text-lg rounded-xl shadow hover:scale-[1.02] transition-transform" // Changed to btn-secondary for distinction
+                    className="btn-primary flex-1 py-3 text-lg rounded-xl shadow hover:scale-[1.02] transition-transform"
                   >
                     Replay
                   </button>
                   <button
                     type="button"
                     onClick={playNextInterval}
-                    className="btn-secondary flex-1 py-3 text-lg rounded-xl shadow hover:scale-[1.02] transition-transform" // Changed to btn-secondary
-                    disabled={currentInterval >= MAX_GUESSES - 1 || !!statuses[currentInterval]} // Disable if last interval or current stage answered
+                    className="btn-primary flex-1 py-3 text-lg rounded-xl shadow hover:scale-[1.02] transition-transform"
+                    disabled={currentInterval >= MAX_GUESSES - 1}
                   >
                     Play Longer
                   </button>
@@ -376,16 +361,16 @@ export default function Home() {
           )}
         </div>
       </div>
-      {/* Modal for result */}
+      {/* Modal for correct answer */}
       {showModal && lastResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm"> {/* Added backdrop blur */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
           <div className="bg-surface rounded-2xl shadow-2xl p-8 max-w-md w-full text-center border border-gray-700">
-            <h2 className={`text-3xl font-bold mb-4 ${lastResult.correct ? 'text-green-400' : 'text-red-400'}`}>{lastResult.correct ? 'Correct!' : 'Out of Guesses!'}</h2>
+            <h2 className={`text-2xl font-bold mb-4 ${lastResult.correct ? 'text-green-400' : 'text-red-400'}`}>{lastResult.correct ? 'Correct!' : 'Out of Guesses!'}</h2>
             <p className="text-lg mb-2 text-gray-200">The correct answer was:</p>
             <p className="text-xl font-semibold text-primary mb-6">
-              {(lastResult.actualTitle || songData?.title || 'Unknown Title')} {/* Fallback for title */}
+              {(lastResult.actualTitle || songData?.title || '-')}
               <span className="text-gray-400"> - </span>
-              {(lastResult.actualArtist || songData?.artist || 'Unknown Artist')} {/* Fallback for artist */}
+              {(lastResult.actualArtist || songData?.artist || '-')}
             </p>
             <button
               onClick={handleNextSong}
@@ -398,4 +383,4 @@ export default function Home() {
       )}
     </main>
   );
-}
+} 
