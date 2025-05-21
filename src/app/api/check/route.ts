@@ -5,13 +5,13 @@ import { NextResponse } from 'next/server';
 let currentSong: { title: string; artist: string } | null = null;
 
 // Helper function to normalize strings for comparison
-function normalize(str: string): string[] {
+const normalize = (str: string): string[] => {
   return str
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, '') // remove punctuation
     .split(/\s+/)
     .filter(Boolean);
-}
+};
 
 export async function POST(request: Request) {
   try {
