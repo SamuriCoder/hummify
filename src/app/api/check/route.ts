@@ -4,6 +4,15 @@ import { NextResponse } from 'next/server';
 // In a real app, you'd want to store the current song in a session or state management
 let currentSong: { title: string; artist: string } | null = null;
 
+// Helper function to normalize strings for comparison
+function normalize(str: string): string[] {
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '') // remove punctuation
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
 export async function POST(request: Request) {
   try {
     const { guess, title, artist } = await request.json();
@@ -13,14 +22,6 @@ export async function POST(request: Request) {
         { error: 'No song data provided' },
         { status: 400 }
       );
-    }
-    // Improved matching: order-insensitive, ignore punctuation, all words must be present
-    function normalize(str) {
-      return str
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, '') // remove punctuation
-        .split(/\s+/)
-        .filter(Boolean);
     }
 
     const guessWords = normalize(guess);
