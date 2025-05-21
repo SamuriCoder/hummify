@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'; // THIS IS THE NECESSARY CHANGE
+export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 
