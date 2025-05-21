@@ -31,7 +31,7 @@ export default function Home() {
     try {
       // Fetch multiple songs in parallel
       const songPromises = Array(BATCH_SIZE).fill(null).map(() =>
-        fetch('/api/song', { cache: 'no-store' }).then(res => res.json()) // Added { cache: 'no-store' }
+        fetch(`/api/song?timestamp=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()) // Added timestamp
       );
 
       const results = await Promise.allSettled(songPromises);
