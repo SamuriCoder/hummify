@@ -11,6 +11,15 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 const TRACK_CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours
 const RECENTLY_PLAYED_SIZE = 10;
 
+const cache: CacheEntry = {
+  artists: [],
+  timestamp: 0,
+  tracks: new Map()
+};
+
+// Track recently played songs to prevent immediate repeats
+const recentlyPlayed: { artist: string; title: string }[] = [];
+
 // Curated list of popular artists
 const POPULAR_ARTISTS = [
   // Hip Hop/Rap
@@ -37,13 +46,53 @@ function shuffleArray(array: any[]) {
   return newArray;
 }
 
+function isRecentlyPlayed(artist: string, title: string): boolean {
+  return recentlyPlayed.some(song => 
+    song.artist.toLowerCase() === artist.toLowerCase() && 
+    song.title.toLowerCase() === title.toLowerCase()
+  );
+}
+
+function addToRecentlyPlayed(artist: string, title: string) {
+  recentlyPlayed.unshift({ artist, title });
+  if (recentlyPlayed.length > RECENTLY_PLAYED_SIZE) {
+    recentlyPlayed.pop();
+  }
+}
+
 async function getPopularArtists() {
+  if (cache.artists.length > 0 && Date.now() - cache.timestamp < CACHE_DURATION) {
+    return shuffleArray([...cache.artists]);
+  }
+
   // Always return a fresh shuffle of the popular artists
-  return shuffleArray([...POPULAR_ARTISTS]);
+  cache.artists = shuffleArray([...POPULAR_ARTISTS]);
+  cache.timestamp = Date.now();
+  return cache.artists;
 }
 
 async function getArtistTopTracks(artist: string) {
+  // Check cache first
+  const cachedTracks = cache.tracks.get(artist);
+  if (cachedTracks && cachedTracks.length > 0) {
+    // Filter out recently played tracks
+    const availableTracks = cachedTracks.filter(track => 
+      !isRecentlyPlayed(artist, track.title)
+    );
+    
+    if (availableTracks.length > 0) {
+      const selectedTrack = availableTracks[Math.floor(Math.random() * availableTracks.length)];
+      addToRecentlyPlayed(artist, selectedTrack.title);
+      return selectedTrack;
+    }
+  }
+
   try {
+    // Clear track cache if it's too old
+    if (Date.now() - cache.timestamp > TRACK_CACHE_DURATION) {
+      cache.tracks.clear();
+    }
+
     // Use Deezer API to get tracks
     const deezerResponse = await fetch(
       `https://api.deezer.com/search?q=artist:"${encodeURIComponent(artist)}"&limit=20&order=RATING_DESC`
@@ -56,9 +105,11 @@ async function getArtistTopTracks(artist: string) {
         track.artist.name.toLowerCase() === artist.toLowerCase()
       );
 
+      // Update cache
       if (validTracks.length > 0) {
-        // Randomly select a track from the valid tracks
+        cache.tracks.set(artist, validTracks);
         const selectedTrack = validTracks[Math.floor(Math.random() * validTracks.length)];
+        addToRecentlyPlayed(artist, selectedTrack.title);
         return selectedTrack;
       }
     }
