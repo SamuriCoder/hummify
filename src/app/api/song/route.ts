@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 
 // Enhanced cache system (currently unused in this specific logic but kept for context)
