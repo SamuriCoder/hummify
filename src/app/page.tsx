@@ -239,7 +239,7 @@ export default function Home() {
           setSuggestions([]);
         }
       } catch (e) {
-        if (e.name !== 'AbortError') setSuggestions([]);
+        if (e instanceof Error && e.name !== 'AbortError') setSuggestions([]);
       }
     }, 200); // 200ms debounce
     return () => {
