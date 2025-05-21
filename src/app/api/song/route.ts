@@ -1,8 +1,8 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'; // THIS IS THE NECESSARY CHANGE
 
 import { NextResponse } from 'next/server';
 
-// Enhanced cache system (currently unused in this specific logic but kept for context)
+// Enhanced cache system
 interface CacheEntry {
   artists: string[];
   timestamp: number;
@@ -12,6 +12,15 @@ interface CacheEntry {
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 const TRACK_CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours
 const RECENTLY_PLAYED_SIZE = 10;
+
+const cache: CacheEntry = {
+  artists: [],
+  timestamp: 0,
+  tracks: new Map()
+};
+
+// Track recently played songs to prevent immediate repeats
+const recentlyPlayed: { artist: string; title: string }[] = [];
 
 // Curated list of popular artists
 const POPULAR_ARTISTS = [
@@ -39,13 +48,53 @@ function shuffleArray(array: any[]) {
   return newArray;
 }
 
+function isRecentlyPlayed(artist: string, title: string): boolean {
+  return recentlyPlayed.some(song =>
+    song.artist.toLowerCase() === artist.toLowerCase() &&
+    song.title.toLowerCase() === title.toLowerCase()
+  );
+}
+
+function addToRecentlyPlayed(artist: string, title: string) {
+  recentlyPlayed.unshift({ artist, title });
+  if (recentlyPlayed.length > RECENTLY_PLAYED_SIZE) {
+    recentlyPlayed.pop();
+  }
+}
+
 async function getPopularArtists() {
+  if (cache.artists.length > 0 && Date.now() - cache.timestamp < CACHE_DURATION) {
+    return shuffleArray([...cache.artists]);
+  }
+
   // Always return a fresh shuffle of the popular artists
-  return shuffleArray([...POPULAR_ARTISTS]);
+  cache.artists = shuffleArray([...POPULAR_ARTISTS]);
+  cache.timestamp = Date.now();
+  return cache.artists;
 }
 
 async function getArtistTopTracks(artist: string) {
+  // Check cache first
+  const cachedTracks = cache.tracks.get(artist);
+  if (cachedTracks && cachedTracks.length > 0) {
+    // Filter out recently played tracks
+    const availableTracks = cachedTracks.filter(track =>
+      !isRecentlyPlayed(artist, track.title)
+    );
+
+    if (availableTracks.length > 0) {
+      const selectedTrack = availableTracks[Math.floor(Math.random() * availableTracks.length)];
+      addToRecentlyPlayed(artist, selectedTrack.title);
+      return selectedTrack;
+    }
+  }
+
   try {
+    // Clear track cache if it's too old
+    if (Date.now() - cache.timestamp > TRACK_CACHE_DURATION) {
+      cache.tracks.clear();
+    }
+
     // Use Deezer API to get tracks
     const deezerResponse = await fetch(
       `https://api.deezer.com/search?q=artist:"${encodeURIComponent(artist)}"&limit=20&order=RATING_DESC`
@@ -58,9 +107,11 @@ async function getArtistTopTracks(artist: string) {
         track.artist.name.toLowerCase() === artist.toLowerCase()
       );
 
+      // Update cache
       if (validTracks.length > 0) {
-        // Randomly select a track from the valid tracks
+        cache.tracks.set(artist, validTracks);
         const selectedTrack = validTracks[Math.floor(Math.random() * validTracks.length)];
+        addToRecentlyPlayed(artist, selectedTrack.title);
         return selectedTrack;
       }
     }
@@ -88,9 +139,10 @@ export async function GET() {
     const validSong = results.find(song => song !== null);
 
     if (!validSong) {
+      // It's better to return a consistent error structure and set cache-control headers here too
       const errorResponse = NextResponse.json(
-        { error: 'No valid songs found' },
-        { status: 500 }
+        { error: 'No valid songs found after multiple attempts' },
+        { status: 503 } // Service Unavailable or 500
       );
       errorResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       errorResponse.headers.set('Pragma', 'no-cache');
@@ -106,6 +158,7 @@ export async function GET() {
       albumArt: validSong.album.cover_medium,
     });
 
+    // These headers are good practice, though force-dynamic should be the primary fix for Vercel
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');
