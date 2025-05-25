@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Howl } from 'howler';
 
-const INTERVALS = [0.1, 1, 2, 4, 8, 15];
+const INTERVALS = [0.5, 1, 2, 4, 8, 15];
 const MAX_GUESSES = 6;
 
 export default function Home() {
