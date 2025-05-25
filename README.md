@@ -13,7 +13,7 @@ A music guessing game inspired by the concept of [Songless](https://lessgames.co
 
 - **Frontend**: Next.js, React, Tailwind CSS
 - **Audio**: Howler.js
-- **State Management**: React Hooks + Zustand
+- **State Management**: React Hooks
 - **API**: Deezer API (free tier)
 - **Deployment**: Vercel
 
