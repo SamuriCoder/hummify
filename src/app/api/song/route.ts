@@ -1,43 +1,30 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
-// Enhanced cache system
 interface CacheEntry {
-  artists: string[];
+  songs: any[];
   timestamp: number;
   tracks: Map<string, any[]>;
+  playedSongs: Set<string>; // Track all played songs
 }
 
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 const TRACK_CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours
 const RECENTLY_PLAYED_SIZE = 10;
+const RESET_THRESHOLD = 0.8; // Reset when 80% of songs have been played
 
 const cache: CacheEntry = {
-  artists: [],
+  songs: [],
   timestamp: 0,
-  tracks: new Map()
+  tracks: new Map(),
+  playedSongs: new Set()
 };
 
 // Track recently played songs to prevent immediate repeats
 const recentlyPlayed: { artist: string; title: string }[] = [];
-
-// Curated list of popular artists
-const POPULAR_ARTISTS = [
-  // Hip Hop/Rap
-  'Drake', 'Kendrick Lamar', 'J. Cole', 'Travis Scott', 'Post Malone',
-  'Eminem', 'Kanye West', 'Jay-Z', 'Lil Wayne', 'Future',
-  '21 Savage', 'Lil Baby', 'Migos', 'Cardi B', 'Nicki Minaj',
-  'Juice WRLD', 'Lil Uzi Vert', 'A$AP Rocky', 'Tyler, The Creator',
-  'Childish Gambino', 'The Weeknd', 'Khalid', 'Billie Eilish', 'Ariana Grande',
-  // Pop
-  'Taylor Swift', 'Ed Sheeran', 'Justin Bieber', 'Dua Lipa', 'Harry Styles',
-  'Lady Gaga', 'Rihanna', 'Beyoncé', 'Bruno Mars', 'Adele', 'Frank Ocean', 'SZA',
-  // Alternative/Indie
-  'Arctic Monkeys', 'Tame Impala', 'Glass Animals',
-  // Rock
-  'Coldplay', 'Imagine Dragons', 'Panic! At The Disco', 'Calvin Harris', 'The Chainsmokers',
-];
 
 function shuffleArray(array: any[]) {
   const newArray = [...array];
@@ -60,32 +47,59 @@ function addToRecentlyPlayed(artist: string, title: string) {
   if (recentlyPlayed.length > RECENTLY_PLAYED_SIZE) {
     recentlyPlayed.pop();
   }
+  // Add to the set of all played songs
+  cache.playedSongs.add(`${artist}-${title}`);
 }
 
-async function getPopularArtists() {
-  if (cache.artists.length > 0 && Date.now() - cache.timestamp < CACHE_DURATION) {
-    return shuffleArray([...cache.artists]);
+async function getSongList() {
+  try {
+    // If cache is empty or expired, load fresh songs
+    if (cache.songs.length === 0 || Date.now() - cache.timestamp > CACHE_DURATION) {
+      const filePath = path.join(process.cwd(), 'hummify-list.json');
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      cache.songs = JSON.parse(fileContent);
+      cache.timestamp = Date.now();
+      cache.playedSongs.clear(); // Reset played songs when loading new list
+    }
+
+    const totalSongs = cache.songs.length;
+    const playedCount = cache.playedSongs.size;
+    const playedRatio = playedCount / totalSongs;
+
+    if (playedRatio >= RESET_THRESHOLD) {
+      cache.playedSongs.clear();
+    }
+
+    // Filter out recently played songs and get a fresh shuffle
+    const availableSongs = cache.songs.filter(song => {
+      const artist = song["Artist Name(s)"].split(',')[0].trim();
+      const title = song["Track Name"];
+      return !cache.playedSongs.has(`${artist}-${title}`);
+    });
+
+    if (availableSongs.length === 0) {
+      cache.playedSongs.clear();
+      return shuffleArray([...cache.songs]);
+    }
+
+    return shuffleArray(availableSongs);
+  } catch (error) {
+    return [];
   }
-
-  // Always return a fresh shuffle of the popular artists
-  cache.artists = shuffleArray([...POPULAR_ARTISTS]);
-  cache.timestamp = Date.now();
-  return cache.artists;
 }
 
-async function getArtistTopTracks(artist: string) {
-  // Check cache first
-  const cachedTracks = cache.tracks.get(artist);
-  if (cachedTracks && cachedTracks.length > 0) {
-    // Filter out recently played tracks
-    const availableTracks = cachedTracks.filter(track =>
-      !isRecentlyPlayed(artist, track.title)
-    );
+async function getTrackPreview(song: any) {
+  const artist = song["Artist Name(s)"].split(',')[0].trim(); // Get first artist if multiple
+  const title = song["Track Name"];
+  const cacheKey = `${artist}-${title}`;
 
-    if (availableTracks.length > 0) {
-      const selectedTrack = availableTracks[Math.floor(Math.random() * availableTracks.length)];
-      addToRecentlyPlayed(artist, selectedTrack.title);
-      return selectedTrack;
+  // Check cache first
+  const cachedTracks = cache.tracks.get(cacheKey);
+  if (cachedTracks && cachedTracks.length > 0) {
+    const track = cachedTracks[0];
+    if (!isRecentlyPlayed(artist, title)) {
+      addToRecentlyPlayed(artist, title);
+      return track;
     }
   }
 
@@ -95,28 +109,24 @@ async function getArtistTopTracks(artist: string) {
       cache.tracks.clear();
     }
 
-    // Use Deezer API to get tracks
+    // Use Deezer API to get track preview
     const deezerResponse = await fetch(
-      `https://api.deezer.com/search?q=artist:"${encodeURIComponent(artist)}"&limit=20&order=RATING_DESC`
+      `https://api.deezer.com/search?q=artist:"${encodeURIComponent(artist)}" track:"${encodeURIComponent(title)}"&limit=1`
     );
     const deezerData = await deezerResponse.json();
 
-    if (deezerData.data) {
-      const validTracks = deezerData.data.filter((track: any) =>
-        track.preview &&
-        track.artist.name.toLowerCase() === artist.toLowerCase()
-      );
-
-      // Update cache
-      if (validTracks.length > 0) {
-        cache.tracks.set(artist, validTracks);
-        const selectedTrack = validTracks[Math.floor(Math.random() * validTracks.length)];
-        addToRecentlyPlayed(artist, selectedTrack.title);
-        return selectedTrack;
+    if (deezerData.data && deezerData.data.length > 0) {
+      const track = deezerData.data[0];
+      if (track.preview) {
+        // Update cache
+        cache.tracks.set(cacheKey, [track]);
+        if (!isRecentlyPlayed(artist, title)) {
+          addToRecentlyPlayed(artist, title);
+          return track;
+        }
       }
     }
   } catch (error) {
-    console.error('Error fetching artist top tracks:', error);
   }
 
   return null;
@@ -124,25 +134,11 @@ async function getArtistTopTracks(artist: string) {
 
 export async function GET() {
   try {
-    const popularArtists = await getPopularArtists();
-
-    // Try multiple artists in parallel with a timeout
-    const artistBatch = popularArtists.slice(0, 8); // Try 8 artists in parallel
-    const trackPromises = artistBatch.map(artist =>
-      Promise.race([
-        getArtistTopTracks(artist),
-        new Promise(resolve => setTimeout(() => resolve(null), 3000)) // 3 second timeout
-      ])
-    );
-
-    const results = await Promise.all(trackPromises);
-    const validSong = results.find(song => song !== null);
-
-    if (!validSong) {
-      // It's better to return a consistent error structure and set cache-control headers here too
+    const songs = await getSongList();
+    if (songs.length === 0) {
       const errorResponse = NextResponse.json(
-        { error: 'No valid songs found after multiple attempts' },
-        { status: 503 } // Service Unavailable or 500
+        { error: 'No songs available' },
+        { status: 503 }
       );
       errorResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       errorResponse.headers.set('Pragma', 'no-cache');
@@ -151,14 +147,43 @@ export async function GET() {
       return errorResponse;
     }
 
+    // Try multiple songs in parallel with a timeout
+    const songBatch = songs.slice(0, 8); // Try 8 songs in parallel
+    
+    const trackPromises = songBatch.map(song =>
+      Promise.race([
+        getTrackPreview(song),
+        new Promise(resolve => setTimeout(() => resolve(null), 3000)) // 3 second timeout
+      ])
+    );
+
+    const results = await Promise.all(trackPromises);
+    
+    // Filter out null results and get all successful tracks
+    const successfulTracks = results.filter((track): track is any => track !== null);
+    
+    if (successfulTracks.length === 0) {
+      const errorResponse = NextResponse.json(
+        { error: 'No valid songs found after multiple attempts' },
+        { status: 503 }
+      );
+      errorResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      errorResponse.headers.set('Pragma', 'no-cache');
+      errorResponse.headers.set('Expires', '0');
+      errorResponse.headers.set('Surrogate-Control', 'no-store');
+      return errorResponse;
+    }
+
+    // Randomly select from successful tracks
+    const selectedTrack = successfulTracks[Math.floor(Math.random() * successfulTracks.length)];
+    
     const response = NextResponse.json({
-      title: validSong.title,
-      artist: validSong.artist.name,
-      previewUrl: validSong.preview,
-      albumArt: validSong.album.cover_medium,
+      title: selectedTrack.title,
+      artist: selectedTrack.artist.name,
+      previewUrl: selectedTrack.preview,
+      albumArt: selectedTrack.album.cover_medium,
     });
 
-    // These headers are good practice, though force-dynamic should be the primary fix for Vercel
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');
@@ -167,7 +192,6 @@ export async function GET() {
     return response;
 
   } catch (error) {
-    console.error('Error fetching song:', error);
     const errorResponse = NextResponse.json(
       { error: 'Failed to fetch song' },
       { status: 500 }
