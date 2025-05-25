@@ -7,6 +7,10 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Hummify - Music Guessing Game',
   description: 'A fun music guessing game where you try to identify songs from short snippets',
+  icons: {
+    icon: '/hummify-logo.png',
+    apple: '/hummify-logo.png',
+  },
 };
 
 export default function RootLayout({
