@@ -19,10 +19,58 @@ body {
 
 @layer components {
   .btn-primary {
-    @apply bg-primary hover:bg-primary/90 text-white font-bold py-2 px-4 rounded;
+    @apply bg-gradient-to-r from-primary to-purple-400 hover:from-purple-500 hover:to-primary text-white font-bold py-3 px-6 rounded-full shadow-lg transition-all duration-200 ease-in-out;
   }
   
   .card {
-    @apply bg-surface rounded-lg p-6 shadow-lg;
+    @apply bg-surface/80 backdrop-blur-lg border border-white/10 rounded-3xl p-8 shadow-2xl transition-all duration-200;
+  }
+
+  .input-modern {
+    @apply w-full pl-12 pr-4 py-3 rounded-xl bg-white/10 border border-white/10 text-lg text-white placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all outline-none;
+  }
+
+  .stage-modern {
+    @apply flex items-center px-4 py-3 rounded-xl border border-white/10 bg-surface/60 shadow-md transition-all duration-150;
+  }
+
+  .stage-modern-active {
+    @apply border-primary bg-gradient-to-r from-primary/20 to-surface/80 shadow-xl;
+  }
+
+  .modal-modern {
+    @apply bg-surface/90 backdrop-blur-2xl rounded-3xl shadow-2xl p-10 max-w-md w-full text-center border border-white/10;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+  .animate-pop-in {
+    animation: popIn 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+  .animate-bounce {
+    animation: bounce 1s infinite;
+  }
+  .animate-gradient-move {
+    background-size: 200% 200%;
+    animation: gradientMove 2s linear infinite;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes popIn {
+    0% { opacity: 0; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
   }
 } 

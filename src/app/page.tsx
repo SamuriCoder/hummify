@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Howl } from 'howler';
+import { useRef as useConfettiRef } from 'react';
 
 const INTERVALS = [0.5, 1, 2, 4, 8, 15];
 const MAX_GUESSES = 6;
@@ -22,6 +23,7 @@ export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [lastResult, setLastResult] = useState<{ correct: boolean; actualTitle: string; actualArtist: string } | null>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
+  const confettiRef = useRef<HTMLDivElement>(null);
 
   const startGame = async (attempt = 1) => {
     const MAX_ATTEMPTS = 50;
@@ -152,6 +154,13 @@ export default function Home() {
     }
   };
 
+  const playFullSong = () => {
+    if (!currentSong) return;
+    currentSong.stop();
+    currentSong.seek(0);
+    currentSong.play();
+  };
+
   const handleGuess = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentSong || !songData) return;
@@ -179,6 +188,7 @@ export default function Home() {
           actualArtist: data.actualArtist,
         });
         setShowModal(true);
+        playFullSong();
       } else if (currentInterval === MAX_GUESSES - 1) {
         setLastResult({
           correct: false,
@@ -186,6 +196,7 @@ export default function Home() {
           actualArtist: data.actualArtist,
         });
         setShowModal(true);
+        playFullSong();
       } else {
         setGuess('');
         setTimeout(() => playNextInterval(), 200); // slight delay for feedback
@@ -247,17 +258,32 @@ export default function Home() {
     };
   }, [guess]);
 
+  useEffect(() => {
+    if (showModal && lastResult?.correct && confettiRef.current) {
+      import('canvas-confetti').then((module) => {
+        const confetti = module.default;
+        confetti({
+          particleCount: 120,
+          spread: 90,
+          origin: { y: 0.6 },
+          zIndex: 1000,
+          colors: ['#8B5CF6', '#A78BFA', '#F472B6', '#FBBF24', '#34D399'],
+        });
+      });
+    }
+  }, [showModal, lastResult]);
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-black p-4">
       <div className="w-full max-w-xl mx-auto">
-        <h1 className="text-5xl font-extrabold text-center mb-6 tracking-tight text-white drop-shadow-lg">
-          <span className="text-primary">Humm</span>ify
+        <h1 className="text-5xl font-extrabold text-center mb-8 tracking-tight text-white drop-shadow-lg">
+          <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Humm</span>ify
         </h1>
-        <div className="card mb-8 shadow-2xl rounded-2xl bg-surface/90 border border-gray-800">
+        <div className="card mb-10">
           {/* Improved Round/Score UI */}
-          <div className="flex items-center justify-between mb-6 px-4 py-2 rounded-lg bg-background/70 border border-gray-700">
+          <div className="flex items-center justify-between mb-8 px-6 py-3 rounded-2xl bg-background/70 border border-white/10 shadow-inner">
             <span className="text-lg font-medium text-gray-300">
-              Round: <span className="font-bold text-white">{round}</span>
+              Song: <span className="font-bold text-white">{round}</span>
             </span>
             <span className="mx-2 h-5 w-px bg-gray-700" />
             <span className="text-lg font-medium text-gray-300">
@@ -265,24 +291,22 @@ export default function Home() {
             </span>
           </div>
           {isPlaying && (
-            <div className="text-center mb-2">
+            <div className="text-center mb-4">
               <p className="text-lg font-semibold text-primary mt-2">
                 Interval: {INTERVALS[currentInterval]}s
               </p>
             </div>
           )}
           {/* Guess Stages */}
-          <div className="mb-6 space-y-2">
+          <div className="mb-8 space-y-3">
             {Array.from({ length: MAX_GUESSES }).map((_, idx) => (
               <div
                 key={idx}
-                className={`flex items-center px-4 py-2 rounded-lg transition-all border ${
-                  idx === currentInterval && isPlaying
-                    ? 'border-primary bg-primary/10 shadow-md'
-                    : 'border-gray-700 bg-background/80'
+                className={`stage-modern ${
+                  idx === currentInterval && isPlaying ? 'stage-modern-active' : ''
                 }`}
               >
-                <span className={`w-16 text-sm font-bold ${idx === currentInterval ? 'text-primary' : 'text-gray-400'}`}>Stage {idx + 1}</span>
+                <span className={`w-20 text-base font-bold ${idx === currentInterval ? 'text-primary' : 'text-gray-400'}`}>Stage {idx + 1}</span>
                 <span className="w-20 text-xs text-gray-400 ml-2">{INTERVALS[idx]}s</span>
                 <span className={`flex-1 ml-4 text-base ${statuses[idx] === 'correct' ? 'text-green-400' : statuses[idx] === 'incorrect' ? 'text-red-400' : 'text-gray-200'}`}>{guesses[idx]}</span>
                 {statuses[idx] === 'correct' && <span className="ml-2 text-green-400 font-bold">✔</span>}
@@ -294,16 +318,16 @@ export default function Home() {
           {!isPlaying ? (
             <button
               onClick={() => startGame()}
-              className="btn-primary w-full py-3 text-lg rounded-xl shadow-md hover:scale-[1.02] transition-transform"
+              className="btn-primary w-full py-3 text-lg rounded-full shadow-lg hover:scale-[1.03] transition-transform"
             >
               Start New Round
             </button>
           ) : (
-            <div className="space-y-4">
-              <form onSubmit={handleGuess} className="space-y-4">
+            <div className="space-y-6">
+              <form onSubmit={handleGuess} className="space-y-6">
                 <div ref={inputContainerRef} className="relative flex items-center">
-                  <span className="absolute left-3 text-gray-500">
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" d="M11 19a8 8 0 100-16 8 8 0 000 16zm7-1l-4.35-4.35" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <span className="absolute left-4 text-gray-500">
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" d="M11 19a8 8 0 100-16 8 8 0 000 16zm7-1l-4.35-4.35" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </span>
                   <input
                     ref={inputRef}
@@ -315,11 +339,11 @@ export default function Home() {
                     }}
                     onFocus={() => setShowSuggestions(true)}
                     placeholder="Know it? Search for the title"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-background border border-gray-700 text-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all outline-none"
+                    className="input-modern"
                     disabled={currentInterval >= MAX_GUESSES || statuses[currentInterval] === 'correct'}
                   />
                   {showSuggestions && suggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-2 z-20 bg-surface rounded-md shadow-lg border border-gray-700 overflow-y-auto max-h-60 w-full">
+                    <div className="absolute left-0 right-0 top-full mt-2 z-20 bg-surface/90 backdrop-blur-lg rounded-xl shadow-lg border border-white/10 overflow-y-auto max-h-60 w-full">
                       {suggestions.map((suggestion, index) => (
                         <button
                           key={index}
@@ -328,7 +352,7 @@ export default function Home() {
                             handleSuggestionClick(suggestion);
                             if (inputRef.current) inputRef.current.focus();
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-700 focus:bg-gray-700 focus:outline-none text-base"
+                          className="w-full text-left px-4 py-3 hover:bg-primary/10 focus:bg-primary/10 focus:outline-none text-base rounded-xl transition-all"
                         >
                           {suggestion}
                         </button>
@@ -336,21 +360,21 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-                <div className="flex space-x-2">
-                  <button type="submit" className="btn-primary flex-1 py-3 text-lg rounded-xl shadow hover:scale-[1.02] transition-transform" disabled={statuses[currentInterval] === 'correct'}>
+                <div className="flex gap-3">
+                  <button type="submit" className="btn-primary flex-1 py-3 text-lg rounded-full shadow-lg hover:scale-[1.03] transition-transform" disabled={statuses[currentInterval] === 'correct'}>
                     Submit
                   </button>
                   <button
                     type="button"
                     onClick={replayCurrentInterval}
-                    className="btn-primary flex-1 py-3 text-lg rounded-xl shadow hover:scale-[1.02] transition-transform"
+                    className="btn-primary flex-1 py-3 text-lg rounded-full shadow-lg hover:scale-[1.03] transition-transform"
                   >
                     Replay
                   </button>
                   <button
                     type="button"
                     onClick={playNextInterval}
-                    className="btn-primary flex-1 py-3 text-lg rounded-xl shadow hover:scale-[1.02] transition-transform"
+                    className="btn-primary flex-1 py-3 text-lg rounded-full shadow-lg hover:scale-[1.03] transition-transform"
                     disabled={currentInterval >= MAX_GUESSES - 1}
                   >
                     Play Longer
@@ -363,18 +387,24 @@ export default function Home() {
       </div>
       {/* Modal for correct answer */}
       {showModal && lastResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-          <div className="bg-surface rounded-2xl shadow-2xl p-8 max-w-md w-full text-center border border-gray-700">
-            <h2 className={`text-2xl font-bold mb-4 ${lastResult.correct ? 'text-green-400' : 'text-red-400'}`}>{lastResult.correct ? 'Correct!' : 'Out of Guesses!'}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 animate-fade-in">
+          <div ref={confettiRef} />
+          <div className="modal-modern animate-pop-in relative overflow-visible">
+            {lastResult.correct && (
+              <div className="flex flex-col items-center mb-2">
+                <span className="text-5xl mb-2 animate-bounce">🎉</span>
+              </div>
+            )}
+            <h2 className={`text-3xl font-extrabold mb-3 ${lastResult.correct ? 'text-green-400' : 'text-red-400'} drop-shadow-lg`}>{lastResult.correct ? 'Correct!' : 'Out of Guesses!'}</h2>
             <p className="text-lg mb-2 text-gray-200">The correct answer was:</p>
-            <p className="text-xl font-semibold text-primary mb-6">
+            <p className={`text-2xl font-extrabold mb-8 bg-gradient-to-r from-primary via-purple-400 to-pink-400 bg-clip-text text-transparent ${lastResult.correct ? 'animate-gradient-move' : ''}`}>
               {(lastResult.actualTitle || songData?.title || '-')}
               <span className="text-gray-400"> - </span>
               {(lastResult.actualArtist || songData?.artist || '-')}
             </p>
             <button
               onClick={handleNextSong}
-              className="btn-primary w-full py-3 text-lg rounded-xl shadow hover:scale-[1.02] transition-transform"
+              className="btn-primary w-full py-3 text-lg rounded-full shadow-lg hover:scale-[1.03] transition-transform"
             >
               Next Song
             </button>

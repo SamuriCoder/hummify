@@ -8,7 +8,12 @@ let currentSong: { title: string; artist: string } | null = null;
 const normalize = (str: string): string[] => {
   return str
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '') // remove punctuation
+    // Remove text in parentheses or brackets
+    .replace(/\([^)]*\)|\[[^\]]*\]/g, '')
+    // Remove common version/remaster/bonus/feat info
+    .replace(/(remaster(ed)?|version|edit|bonus track|mono|stereo|feat\.?|featuring|explicit|clean|single|album|mix|live|deluxe|original|demo|reissue|re\-issue|re\s?record(ed)?|with .+|from .+|\d{4})/g, '')
+    // Remove punctuation
+    .replace(/[^a-z0-9\s]/g, '')
     .split(/\s+/)
     .filter(Boolean);
 };
