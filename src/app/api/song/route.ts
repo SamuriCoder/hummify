@@ -9,7 +9,7 @@ interface SongEntry {
   'Artist Name(s)': string;
 }
 
-const RECENTLY_PLAYED_SIZE = 1;
+const RECENTLY_PLAYED_SIZE = 45;
 const recentlyPlayed: { title: string; artist: string }[] = [];
 
 function shuffleArray<T>(array: T[]): T[] {
