@@ -9,7 +9,7 @@ interface SongEntry {
   'Artist Name(s)': string;
 }
 
-const RECENTLY_PLAYED_SIZE = 45;
+const RECENTLY_PLAYED_SIZE = 1;
 const recentlyPlayed: { title: string; artist: string }[] = [];
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -61,7 +61,7 @@ async function fetchDeezerTrack(title: string, artist: string) {
 
 export async function GET() {
   try {
-    const filePath = path.join(process.cwd(), 'hummify-list.json');
+    const filePath = path.join(process.cwd(), 'hummify-list-master.json');
     const fileContents = fs.readFileSync(filePath, 'utf-8');
     const allSongs: SongEntry[] = JSON.parse(fileContents);
 

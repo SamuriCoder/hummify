@@ -20,7 +20,7 @@
     "Artist Name(s)": "Harry Styles"
   },
   {
-    "Track Name": "Sunflower - Spider-Man: Into the Spider-Verse",
+    "Track Name": "Sunflower",
     "Artist Name(s)": "Post Malone,Swae Lee"
   },
   {
@@ -84,7 +84,7 @@
     "Artist Name(s)": "Tom Odell"
   },
   {
-    "Track Name": "Senorita",
+    "Track Name": "Señorita",
     "Artist Name(s)": "Shawn Mendes,Camila Cabello"
   },
   {
@@ -116,7 +116,7 @@
     "Artist Name(s)": "Post Malone"
   },
   {
-    "Track Name": "Bohemian Rhapsody - Remastered 2011",
+    "Track Name": "Bohemian Rhapsody",
     "Artist Name(s)": "Queen"
   },
   {
@@ -260,7 +260,7 @@
     "Artist Name(s)": "Lady Gaga,Bruno Mars"
   },
   {
-    "Track Name": "Cold Heart - PNAU Remix",
+    "Track Name": "Cold Heart",
     "Artist Name(s)": "Elton John,Dua Lipa,PNAU"
   },
   {
@@ -333,7 +333,7 @@
   },
   {
     "Track Name": "Lean On",
-    "Artist Name(s)": "Major Lazer,DJ Snake,M\u00d8"
+    "Artist Name(s)": "Major Lazer,DJ Snake,Mø"
   },
   {
     "Track Name": "Whistle",
@@ -349,7 +349,7 @@
   },
   {
     "Track Name": "Die Young",
-    "Artist Name(s)": "Ke$ha"
+    "Artist Name(s)": "Kesha"
   },
   {
     "Track Name": "Wild Ones",
@@ -361,7 +361,7 @@
   },
   {
     "Track Name": "We Are Young",
-    "Artist Name(s)": "fun.,Janelle Mon\u00e1e"
+    "Artist Name(s)": "fun.,Janelle Monáe"
   },
   {
     "Track Name": "Right Round",
@@ -396,7 +396,7 @@
     "Artist Name(s)": "Pitbull,Ne-Yo"
   },
   {
-    "Track Name": "Moves Like Jagger - Studio Recording From The Voice Performance",
+    "Track Name": "Moves Like Jagger",
     "Artist Name(s)": "Maroon 5,Christina Aguilera"
   },
   {
@@ -564,7 +564,7 @@
     "Artist Name(s)": "Gunna"
   },
   {
-    "Track Name": "Superhero [with Future & Chris Brown]",
+    "Track Name": "Superhero",
     "Artist Name(s)": "Metro Boomin,Future,Chris Brown"
   },
   {
@@ -608,7 +608,7 @@
     "Artist Name(s)": "Playboi Carti,Lil Uzi Vert"
   },
   {
-    "Track Name": "Big Poppa - 2005 Remaster",
+    "Track Name": "Big Poppa",
     "Artist Name(s)": "The Notorious B.I.G."
   },
   {
@@ -622,10 +622,6 @@
   {
     "Track Name": "MIDDLE CHILD",
     "Artist Name(s)": "J. Cole"
-  },
-  {
-    "Track Name": "Falling Down - Bonus Track",
-    "Artist Name(s)": "Lil Peep,XXXTENTACION"
   },
   {
     "Track Name": "Freestyle",
@@ -766,6 +762,10 @@
   {
     "Track Name": "DIE TRYING",
     "Artist Name(s)": "PARTYNEXTDOOR,Drake,Yebba"
+  },
+  {
+    "Track Name": "Rock Your Body",
+    "Artist Name(s)": "Justin Timberlake"
   },
   {
     "Track Name": "Time Flies",
@@ -948,10 +948,6 @@
     "Artist Name(s)": "Lil Tecca"
   },
   {
-    "Track Name": "Revenge",
-    "Artist Name(s)": "XXXTENTACION"
-  },
-  {
     "Track Name": "In My Feelings",
     "Artist Name(s)": "Drake"
   },
@@ -966,10 +962,6 @@
   {
     "Track Name": "Ni**as In Paris",
     "Artist Name(s)": "JAY-Z,Kanye West"
-  },
-  {
-    "Track Name": "Hope",
-    "Artist Name(s)": "XXXTENTACION"
   },
   {
     "Track Name": "Godzilla",
@@ -1000,7 +992,7 @@
     "Artist Name(s)": "Offset,Metro Boomin"
   },
   {
-    "Track Name": "Old Town Road - Remix",
+    "Track Name": "Old Town Road",
     "Artist Name(s)": "Lil Nas X,Billy Ray Cyrus"
   },
   {
@@ -1014,10 +1006,6 @@
   {
     "Track Name": "All Girls Are The Same",
     "Artist Name(s)": "Juice WRLD"
-  },
-  {
-    "Track Name": "Fuck Love",
-    "Artist Name(s)": "XXXTENTACION,Trippie Redd"
   },
   {
     "Track Name": "I Like It",
@@ -1072,23 +1060,127 @@
     "Artist Name(s)": "Lil Nas X,Jack Harlow"
   },
   {
-    "Track Name": "XO Tour Llif3",
-    "Artist Name(s)": "Lil Uzi Vert"
-  },
-  {
-    "Track Name": "Jocelyn Flores",
-    "Artist Name(s)": "XXXTENTACION"
-  },
-  {
-    "Track Name": "SAD!",
-    "Artist Name(s)": "XXXTENTACION"
-  },
-  {
     "Track Name": "God's Plan",
     "Artist Name(s)": "Drake"
   },
   {
     "Track Name": "rockstar",
     "Artist Name(s)": "Post Malone,21 Savage"
+  },
+  {
+    "Track Name": "Work Out",
+    "Artist Name(s)": "J. Cole"
+  },
+  {
+    "Track Name": "Wake Up in the Sky",
+    "Artist Name(s)": "Gucci Mane,Bruno Mars,Kodak Black"
+  },
+  {
+    "Track Name": "Space Cadet",
+    "Artist Name(s)": "Metro Boomin,Gunna"
+  },
+  {
+    "Track Name": "Everyday",
+    "Artist Name(s)": "A$AP Rocky,Rod Stewart,Miguel,Mark Ronson"
+  },
+  {
+    "Track Name": "I Ain't Worried",
+    "Artist Name(s)": "OneRepublic"
+  },
+  {
+    "Track Name": "Heat Waves",
+    "Artist Name(s)": "Glass Animals"
+  },
+  {
+    "Track Name": "Too Sweet",
+    "Artist Name(s)": "Hozier"
+  },
+  {
+    "Track Name": "Lush Life",
+    "Artist Name(s)": "Zara Larsson"
+  },
+  {
+    "Track Name": "Hey Soul Sister",
+    "Artist Name(s)": "Train"
+  },
+  {
+    "Track Name": "Honey I'm Good",
+    "Artist Name(s)": "Andy Grammer"
+  },
+  {
+    "Track Name": "This Love",
+    "Artist Name(s)": "Maroon 5"
+  },
+  {
+    "Track Name": "On Top Of The World",
+    "Artist Name(s)": "Imagine Dragons"
+  },
+  {
+    "Track Name": "Sunshine",
+    "Artist Name(s)": "OneRepublic"
+  },
+  {
+    "Track Name": "Out of My League",
+    "Artist Name(s)": "Fitz and The Tantrums"
+  },
+  {
+    "Track Name": "Sunroof",
+    "Artist Name(s)": "Nicky Youre,hey daisy"
+  },
+  {
+    "Track Name": "Sunday Best",
+    "Artist Name(s)": "Surfaces"
+  },
+  {
+    "Track Name": "I Lived",
+    "Artist Name(s)": "OneRepublic"
+  },
+  {
+    "Track Name": "3 Nights",
+    "Artist Name(s)": "Dominic Fike"
+  },
+  {
+    "Track Name": "Stargazing",
+    "Artist Name(s)": "Myles Smith"
+  },
+  {
+    "Track Name": "I Feel It Coming",
+    "Artist Name(s)": "The Weeknd,Daft Punk"
+  },
+  {
+    "Track Name": "A Bar Song",
+    "Artist Name(s)": "Shaboozey"
+  },
+  {
+    "Track Name": "Renegades",
+    "Artist Name(s)": "X Ambassadors"
+  },
+  {
+    "Track Name": "Budapest",
+    "Artist Name(s)": "George Ezra"
+  },
+  {
+    "Track Name": "Sucker",
+    "Artist Name(s)": "Jonas Brothers"
+  },
+  {
+    "Track Name": "Ride",
+    "Artist Name(s)": "Twenty One Pilots"
+  },
+  {
+    "Track Name": "Come With Me",
+    "Artist Name(s)": "Surfaces,salem ilese"
+  },
+  {
+    "Track Name": "Better Days",
+    "Artist Name(s)": "NEIKED,Mae Muller,Polo G"
+  },
+  {
+    "Track Name": "Levitating",
+    "Artist Name(s)": "Dua Lipa,DaBaby"
+  },
+  {
+    "Track Name": "Good Life",
+    "Artist Name(s)": "OneRepublic"
   }
 ]
