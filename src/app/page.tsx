@@ -31,6 +31,9 @@ export default function Home() {
     const BATCH_SIZE = 5; // Number of songs to try in parallel
     setIsLoading(true);
     try {
+      // Get cached songs from localStorage
+      const cachedSongs = localStorage.getItem('songCache') || '[]';
+      
       // Fetch multiple songs in parallel
       const songPromises = Array(BATCH_SIZE).fill(null).map(() => 
         fetch('/api/song').then(res => res.json())
@@ -38,11 +41,24 @@ export default function Home() {
 
       const results = await Promise.allSettled(songPromises);
       
-      // Find the first successful song with a valid preview URL
-      const validSong = results.find(result => 
-        result.status === 'fulfilled' && 
-        result.value.previewUrl
-      );
+      // Find the first successful song with a valid preview URL that's not in cache
+      let validSong = null;
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value.previewUrl) {
+          // Check if song is in cache
+          const response = await fetch(`/api/song-cache?title=${encodeURIComponent(result.value.title)}&artist=${encodeURIComponent(result.value.artist)}`, {
+            headers: {
+              'x-song-cache': cachedSongs
+            }
+          });
+          const { isCached } = await response.json();
+          
+          if (!isCached) {
+            validSong = result;
+            break;
+          }
+        }
+      }
 
       if (!validSong || validSong.status !== 'fulfilled') {
         setIsLoading(false);
@@ -51,6 +67,22 @@ export default function Home() {
 
       const data = validSong.value;
       console.log('Loading song with preview URL:', data.previewUrl);
+
+      // Add song to cache
+      const cacheResponse = await fetch('/api/song-cache', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-song-cache': cachedSongs
+        },
+        body: JSON.stringify({
+          title: data.title,
+          artist: data.artist
+        })
+      });
+      
+      const { cache: updatedCache } = await cacheResponse.json();
+      localStorage.setItem('songCache', JSON.stringify(updatedCache));
 
       // Create and test the sound in parallel with other operations
       const sound = new Howl({
@@ -283,7 +315,8 @@ export default function Home() {
     <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-black p-4">
       <div className="w-full max-w-xl mx-auto">
         <h1 className="text-5xl font-extrabold text-center mb-8 tracking-tight text-white drop-shadow-lg">
-          <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Humm</span>ify
+          <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Humm</span>
+          ify
         </h1>
         <div className="card mb-10">
           {/* Improved Round/Score UI */}
