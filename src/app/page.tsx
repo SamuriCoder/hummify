@@ -24,11 +24,12 @@ export default function Home() {
   const [lastResult, setLastResult] = useState<{ correct: boolean; actualTitle: string; actualArtist: string } | null>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const confettiRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const startGame = async (attempt = 1) => {
     const MAX_ATTEMPTS = 50;
     const BATCH_SIZE = 5; // Number of songs to try in parallel
-
+    setIsLoading(true);
     try {
       // Fetch multiple songs in parallel
       const songPromises = Array(BATCH_SIZE).fill(null).map(() => 
@@ -44,6 +45,7 @@ export default function Home() {
       );
 
       if (!validSong || validSong.status !== 'fulfilled') {
+        setIsLoading(false);
         throw new Error('No valid songs found in batch');
       }
 
@@ -55,6 +57,7 @@ export default function Home() {
         src: [data.previewUrl],
         html5: true,
         onload: () => {
+          setIsLoading(false);
           console.log('Song loaded successfully');
           setCurrentSong(sound);
           setSongData({ title: data.title, artist: data.artist });
@@ -63,6 +66,7 @@ export default function Home() {
           playCurrentInterval(sound);
         },
         onloaderror: (id, error) => {
+          setIsLoading(false);
           console.error('Error loading song:', error);
           if (attempt < MAX_ATTEMPTS) {
             startGame(attempt + 1);
@@ -71,6 +75,7 @@ export default function Home() {
           }
         },
         onplayerror: (id, error) => {
+          setIsLoading(false);
           console.error('Error playing song:', error);
           if (attempt < MAX_ATTEMPTS) {
             startGame(attempt + 1);
@@ -80,6 +85,7 @@ export default function Home() {
         }
       });
     } catch (error) {
+      setIsLoading(false);
       console.error('Error starting game:', error);
       if (attempt >= 5) {
         alert('Failed to start game after several attempts. Please try again.');
@@ -316,12 +322,32 @@ export default function Home() {
           </div>
           {/* Input and Controls */}
           {!isPlaying ? (
-            <button
-              onClick={() => startGame()}
-              className="btn-primary w-full py-3 text-lg rounded-full shadow-lg hover:scale-[1.03] transition-transform"
-            >
-              Start New Round
-            </button>
+            isLoading ? (
+              <div className="btn-primary w-full py-3 text-lg rounded-full shadow-lg flex justify-center items-center">
+                <img src="/hummify-music-icon.png" alt="Loading music icon" className="bobbing-music-logo mr-2 darken-music-icon" style={{ height: '32px', width: 'auto' }} />
+                <span className="text-lg font-bold text-white ml-1">Loading...</span>
+                <style>{`
+                  .bobbing-music-logo {
+                    display: inline-block;
+                    animation: bobble 1s infinite ease-in-out;
+                  }
+                  .darken-music-icon {
+                    filter: brightness(0.7) contrast(1.2);
+                  }
+                  @keyframes bobble {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-10px); }
+                  }
+                `}</style>
+              </div>
+            ) : (
+              <button
+                onClick={() => startGame()}
+                className="btn-primary w-full py-3 text-lg rounded-full shadow-lg hover:scale-[1.03] transition-transform"
+              >
+                Start New Round
+              </button>
+            )
           ) : (
             <div className="space-y-6">
               <form onSubmit={handleGuess} className="space-y-6">
